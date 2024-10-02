@@ -1,29 +1,21 @@
-# README #
+# Getting Started #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This solution contains an easy to use and simple music manager.
 
-### What is this repository for? ###
+## Technologies
+- Visual Studio 2022 
+- .NET 8 SDK
+- Node.js (for Tailwind CSS)
+- Git
+- EntityFramework Core 
+- Blazor
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### How do I get set up? ###
+## Local Enviroment Setup
+You need to have the .NET 8 SDK installed. Be sure to download the latest version for Visual Studio 2022.
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+Use the latest version of Visual Studio 2022: https://visualstudio.microsoft.com/downloads/
 
-### Contribution guidelines ###
+Install the node packages before building the solution by using ```npm install``
 
-* Writing tests
-* Code review
-* Other guidelines
 
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact

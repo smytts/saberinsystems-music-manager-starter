@@ -1,0 +1,58 @@
+﻿@page "/AddSong"
+@inject HttpClient Http
+@using music_manager_starter.Shared
+
+
+<div class="p-6">
+    <h2 class="text-xl font-semibold text-white">Add New Song</h2>
+    <EditForm Model="newSong" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Title</label>
+            <InputText @bind-Value="newSong.Title" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Artist</label>
+            <InputText @bind-Value="newSong.Artist" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Album</label>
+            <InputText @bind-Value="newSong.Album" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Genre</label>
+            <InputText @bind-Value="newSong.Genre" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">Add Song</button>
+    </EditForm>
+
+    @if (message != null)
+    {
+        <p class="mt-4 text-green-500">@message</p>
+    }
+</div>
+
+@code {
+    private Song newSong = new Song();
+    private string message;
+
+    private async Task HandleValidSubmit()
+    {
+        var response = await Http.PostAsJsonAsync("api/songs", newSong);
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Song added successfully!";
+            newSong = new Song(); 
+        }
+        else
+        {
+            message = "Error adding song. Please try again.";
+        }
+    }
+}
