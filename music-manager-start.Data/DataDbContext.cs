@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using music_manager_start.Data.Models;
 using music_manager_starter.Data.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace music_manager_starter.Data
 {
@@ -13,6 +15,7 @@ namespace music_manager_starter.Data
         public DataDbContext(DbContextOptions<DataDbContext> options) : base(options) { }
 
         public DbSet<Song> Songs { get; set; }
+        public DbSet<Playlist> Playlists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,6 +28,12 @@ namespace music_manager_starter.Data
                 new Song { Id = Guid.Parse("b7cc1c82-77e2-40d0-8bc2-d7e05962c0e3"), Title = "Utah", Artist = "French Cassettes", Album = "The Great Escape", Genre = "Indie" },
                 new Song { Id = Guid.Parse("22aa6f84-06d8-4a0e-bdad-3000b35b5b5f"), Title = "Something Real", Artist = "Post Malone", Album = "Twelve Carat Toothache", Genre = "Hip Hop" }
             );
+
+            // Configure many-to-many relationship between playlist and song
+            modelBuilder.Entity<Playlist>()
+                .HasMany(p => p.Songs)
+                .WithMany(s => s.Playlists)
+                .UsingEntity(j => j.ToTable("PlaylistSongs"));
         }
 
     }
