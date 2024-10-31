@@ -1,6 +1,7 @@
 ﻿@page "/Playlists"
 @inject HttpClient Http
 @using music_manager_starter.Shared
+@using music_manager_starter.Shared.DTOs
 
 <div class="p-6">
     <h2 class="text-xl font-semibold text-white">Playlists</h2>
@@ -128,43 +129,62 @@
         StateHasChanged(); // Notify the component to re-render
     }
 
-   private async Task HandleValidSubmit()
-{
-    // Clear any previous error messages
-    errorMessage = null;
-    successMessage = null;
-
-    // Check if any songs are loaded
-    if (songs == null || !songs.Any())
+    private async Task HandleValidSubmit()
     {
-        errorMessage = "No songs available to create a playlist.";
-        return;
-    }
+        // Clear any previous error messages
+        errorMessage = null;
+        successMessage = null;
 
-    // Log current selection state
-    var selectedSongs = songs.Where(s => s.IsSelected).ToList();
-    Console.WriteLine($"Total songs: {songs.Count}, Selected songs: {selectedSongs.Count}");
+        // Log songs before submission to check selection state
+        foreach (var song in songs)
+        {
+            Console.WriteLine($"Song: ID: {song.Id}, Title: {song.Title}, IsSelected: {song.IsSelected}");
+        }
 
-    // Check if the playlist name, description, and selected songs are valid
-    if (string.IsNullOrEmpty(newPlaylist.Name) || string.IsNullOrEmpty(newPlaylist.Description) || !selectedSongs.Any())
-    {
-        errorMessage = "Please provide a playlist name, description, and select at least one song.";
-        return;
-    }
+        // Check if any songs are loaded
+        if (songs == null || !songs.Any())
+        {
+            errorMessage = "No songs available to create a playlist.";
+            return;
+        }
 
-    Console.WriteLine($"Creating Playlist: {newPlaylist.Name}, Songs Count: {selectedSongs.Count}");
+        // Log current selection state
+        var selectedSongs = songs.Where(s => s.IsSelected).ToList();
+        Console.WriteLine($"Total songs: {songs.Count}, Selected songs: {selectedSongs.Count}");
+
+        // Check if the playlist name, description, and selected songs are valid
+        if (string.IsNullOrEmpty(newPlaylist.Name) || string.IsNullOrEmpty(newPlaylist.Description) || !selectedSongs.Any())
+        {
+            errorMessage = "Please provide a playlist name, description, and select at least one song.";
+            return;
+        }
+
+        Console.WriteLine($"Creating Playlist: {newPlaylist.Name}, Description: {newPlaylist.Description} Songs Count: {selectedSongs.Count}");
+
+        foreach (var song in selectedSongs)
+        {
+             Console.WriteLine($"Song: ID: {song.Id}, Title: {song.Title}, IsSelected: {song.IsSelected}");
+        }
+        
 
     // Create the playlist object with selected songs
-    var playlistToCreate = new Playlist
+     var playlistDto = new PlaylistDTO
     {
         Name = newPlaylist.Name,
         Description = newPlaylist.Description,
-        Songs = selectedSongs // Add selected songs directly here
+        SongIds = selectedSongs.Select(s => s.Id).ToList()
     };
+
+    // var playlistToCreate = new Playlist
+    // {
+    //     Name = newPlaylist.Name,
+    //     Description = newPlaylist.Description,
+    //     Songs = selectedSongs
+    // };
 
     try
     {
-        var response = await Http.PostAsJsonAsync("api/playlists", playlistToCreate);
+        var response = await Http.PostAsJsonAsync("api/playlists", playlistDto);
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();

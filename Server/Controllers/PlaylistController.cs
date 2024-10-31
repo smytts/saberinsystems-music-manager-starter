@@ -77,7 +77,9 @@ namespace music_manager_starter.Server.Controllers
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState.Values.SelectMany(v => v.Errors);
+                Console.WriteLine($"Model state errors: {string.Join(", ", errors.Select(e => e.ErrorMessage))}");
+                return BadRequest("Model state is invalid");
             }
 
             if (playlistDto.SongIds == null || !playlistDto.SongIds.Any())
