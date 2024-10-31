@@ -14,7 +14,6 @@ namespace music_manager_starter.Shared
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        [JsonIgnore]
         public List<Song> Songs { get; set; } = new List<Song>(); // initialized to avoid null reference issues
     }
 }

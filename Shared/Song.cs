@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -15,8 +16,8 @@ namespace music_manager_starter.Shared
         public string Artist { get; set; }
         public string Album { get; set; }
         public string Genre { get; set; }
-        [JsonIgnore]
-        public List<Playlist> Playlists { get; set; } = new List<Playlist>(); // For many-to-many relationship with Playlist
         public bool IsSelected { get; set; }
+        public List<Playlist> Playlists { get; set; } = new List<Playlist>(); // For many-to-many relationship with Playlist
+       
     }
 }

@@ -128,54 +128,62 @@
         StateHasChanged(); // Notify the component to re-render
     }
 
-    private async Task HandleValidSubmit()
+   private async Task HandleValidSubmit()
+{
+    // Clear any previous error messages
+    errorMessage = null;
+    successMessage = null;
+
+    // Check if any songs are loaded
+    if (songs == null || !songs.Any())
     {
-        if (songs == null || !songs.Any())
-        {
-            errorMessage = "No songs available to create a playlist.";
-            return;
-        }
-
-        var selectedSongs = songs.Where(s => s.IsSelected).ToList();
-
-        if (string.IsNullOrEmpty(newPlaylist.Name) || string.IsNullOrEmpty(newPlaylist.Description) || !selectedSongs.Any())
-        {
-            errorMessage = "Please provide a playlist name, description, and select at least one song.";
-            return;
-        }
-
-        var playlistToCreate = new Playlist
-            {
-                Name = newPlaylist.Name,
-                Description = newPlaylist.Description,
-                Songs = selectedSongs // Add selected songs directly here
-            };
-
-        try
-        {
-            var response = await Http.PostAsJsonAsync("api/playlists", playlistToCreate);
-            if (response.IsSuccessStatusCode)
-            {
-                newPlaylist = new Playlist(); // Reset form
-                songs.ForEach(s => s.IsSelected = false); // Clear song selection
-                await LoadPlaylists(); // Reload playlists
-                successMessage = "Playlist created successfully!";
-                errorMessage = null; // Clear error message
-
-                StateHasChanged(); // Force a re-render to update the UI
-            }
-            else
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                errorMessage = $"Failed to create playlist. Server responded: {responseContent}";
-                successMessage = null; // Clear success message
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"An error occurred while creating the playlist: {ex.Message}";
-        }
+        errorMessage = "No songs available to create a playlist.";
+        return;
     }
+
+    // Log current selection state
+    var selectedSongs = songs.Where(s => s.IsSelected).ToList();
+    Console.WriteLine($"Total songs: {songs.Count}, Selected songs: {selectedSongs.Count}");
+
+    // Check if the playlist name, description, and selected songs are valid
+    if (string.IsNullOrEmpty(newPlaylist.Name) || string.IsNullOrEmpty(newPlaylist.Description) || !selectedSongs.Any())
+    {
+        errorMessage = "Please provide a playlist name, description, and select at least one song.";
+        return;
+    }
+
+    Console.WriteLine($"Creating Playlist: {newPlaylist.Name}, Songs Count: {selectedSongs.Count}");
+
+    // Create the playlist object with selected songs
+    var playlistToCreate = new Playlist
+    {
+        Name = newPlaylist.Name,
+        Description = newPlaylist.Description,
+        Songs = selectedSongs // Add selected songs directly here
+    };
+
+    try
+    {
+        var response = await Http.PostAsJsonAsync("api/playlists", playlistToCreate);
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error response: {responseContent}"); // Log the error response
+            errorMessage = $"Failed to create playlist. Server responded: {responseContent}";
+            return; // Exit if the request failed
+        }
+
+        // Reset form and update UI on successful playlist creation
+        newPlaylist = new Playlist(); // Reset form
+        songs.ForEach(s => s.IsSelected = false); // Clear song selection
+        await LoadPlaylists(); // Reload playlists
+        successMessage = "Playlist created successfully!";
+    }
+    catch (Exception ex)
+    {
+        errorMessage = $"An error occurred while creating the playlist: {ex.Message}";
+    }
+}
 
     private async Task DeletePlaylist(Guid playlistId)
     {

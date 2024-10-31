@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using music_manager_starter.Data;
 using music_manager_starter.Data.Models;
+using music_manager_starter.Shared.DTOs; // Import your DTOs
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace music_manager_starter.Server.Controllers
@@ -21,16 +23,27 @@ namespace music_manager_starter.Server.Controllers
 
         // Get all playlists
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Playlist>>> GetPlaylists()
+        public async Task<ActionResult<IEnumerable<PlaylistDTO>>> GetPlaylists() // Change return type to IEnumerable<PlaylistDTO>
         {
-            return await _context.Playlists
+            var playlists = await _context.Playlists
                 .Include(p => p.Songs) // Include songs to load
                 .ToListAsync();
+
+            // Map to DTOs
+            var playlistDtos = playlists.Select(p => new PlaylistDTO
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                SongIds = p.Songs.Select(s => s.Id).ToList() // Get Song IDs
+            });
+
+            return Ok(playlistDtos);
         }
 
         // Get a specific playlist by ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Playlist>> GetPlaylist(Guid id)
+        public async Task<ActionResult<PlaylistDTO>> GetPlaylist(Guid id) // Change return type to PlaylistDTO
         {
             var playlist = await _context.Playlists
                 .Include(p => p.Songs) // Include songs to load
@@ -40,14 +53,24 @@ namespace music_manager_starter.Server.Controllers
             {
                 return NotFound();
             }
-            return playlist;
+
+            // Map to DTO
+            var playlistDto = new PlaylistDTO
+            {
+                Id = playlist.Id,
+                Name = playlist.Name,
+                Description = playlist.Description,
+                SongIds = playlist.Songs.Select(s => s.Id).ToList() // Get Song IDs
+            };
+
+            return Ok(playlistDto);
         }
 
         // Create new playlist
         [HttpPost]
-        public async Task<ActionResult<Playlist>> PostPlaylist(Playlist playlist)
+        public async Task<ActionResult<PlaylistDTO>> PostPlaylist(PlaylistDTO playlistDto) // Change parameter to PlaylistDTO
         {
-            if (playlist == null)
+            if (playlistDto == null)
             {
                 return BadRequest("Playlist cannot be null.");
             }
@@ -57,40 +80,69 @@ namespace music_manager_starter.Server.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (playlist.Songs == null || !playlist.Songs.Any())
+            if (playlistDto.SongIds == null || !playlistDto.SongIds.Any())
             {
                 return BadRequest("At least one song must be included in the playlist.");
             }
 
             // Fetch existing songs from the database
             var existingSongs = await _context.Songs
-                .Where(song => playlist.Songs.Select(s => s.Id).Contains(song.Id))
+                .Where(song => playlistDto.SongIds.Contains(song.Id))
                 .ToListAsync();
 
             // Check if all songs exist
-            if (existingSongs.Count != playlist.Songs.Count)
+            if (existingSongs.Count != playlistDto.SongIds.Count)
             {
                 return BadRequest("One or more songs do not exist in the library.");
             }
 
-            // Associate existing songs with the new playlist
-            playlist.Songs = existingSongs;
+            // Create new playlist model
+            var newPlaylist = new Playlist
+            {
+                Id = Guid.NewGuid(), // Generate a new ID
+                Name = playlistDto.Name,
+                Description = playlistDto.Description,
+                Songs = existingSongs // Associate existing songs with the new playlist
+            };
 
-            _context.Playlists.Add(playlist);
+            Console.WriteLine($"Creating playlist: {newPlaylist.Name}, Songs: {string.Join(", ", newPlaylist.Songs.Select(s => s.Title))}");
+
+            _context.Playlists.Add(newPlaylist);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
+            // Map the new playlist to DTO for the response
+            playlistDto.Id = newPlaylist.Id; // Set the ID from the created playlist
+            return CreatedAtAction(nameof(GetPlaylist), new { id = newPlaylist.Id }, playlistDto);
         }
 
-
-        // Update an exisiting playlist
+        // Update an existing playlist
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPlaylist(Guid id, Playlist updatedPlaylist)
+        public async Task<IActionResult> PutPlaylist(Guid id, PlaylistDTO updatedPlaylistDto) // Change parameter to PlaylistDTO
         {
-            if (id != updatedPlaylist.Id)
+            if (id != updatedPlaylistDto.Id)
             {
                 return BadRequest("Playlist ID mismatch.");
             }
+
+            // Fetch existing songs from the database
+            var existingSongs = await _context.Songs
+                .Where(song => updatedPlaylistDto.SongIds.Contains(song.Id))
+                .ToListAsync();
+
+            // Check if all songs exist
+            if (existingSongs.Count != updatedPlaylistDto.SongIds.Count)
+            {
+                return BadRequest("One or more songs do not exist in the library.");
+            }
+
+            // Update the playlist
+            var updatedPlaylist = new Playlist
+            {
+                Id = updatedPlaylistDto.Id,
+                Name = updatedPlaylistDto.Name,
+                Description = updatedPlaylistDto.Description,
+                Songs = existingSongs // Associate existing songs with the updated playlist
+            };
 
             _context.Entry(updatedPlaylist).State = EntityState.Modified;
 
