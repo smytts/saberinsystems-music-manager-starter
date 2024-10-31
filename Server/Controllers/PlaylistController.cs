@@ -35,8 +35,13 @@ namespace music_manager_starter.Server.Controllers
                 Id = p.Id,
                 Name = p.Name,
                 Description = p.Description,
-                SongIds = p.Songs.Select(s => s.Id).ToList() // Get Song IDs
-            });
+                Songs = p.Songs.Select(s => new SongDTO
+                {
+                    Id = s.Id,
+                    Title = s.Title,
+                    Artist = s.Artist
+                }).ToList()
+            }).ToList();
 
             return Ok(playlistDtos);
         }
@@ -60,7 +65,12 @@ namespace music_manager_starter.Server.Controllers
                 Id = playlist.Id,
                 Name = playlist.Name,
                 Description = playlist.Description,
-                SongIds = playlist.Songs.Select(s => s.Id).ToList() // Get Song IDs
+                Songs = playlist.Songs.Select(s => new SongDTO
+                {
+                    Id = s.Id,
+                    Title = s.Title,
+                    Artist = s.Artist
+                }).ToList()
             };
 
             return Ok(playlistDto);
@@ -68,7 +78,7 @@ namespace music_manager_starter.Server.Controllers
 
         // Create new playlist
         [HttpPost]
-        public async Task<ActionResult<PlaylistDTO>> PostPlaylist(PlaylistDTO playlistDto) // Change parameter to PlaylistDTO
+        public async Task<ActionResult<PlaylistDTO>> PostPlaylist(PlaylistDTO playlistDto)
         {
             if (playlistDto == null)
             {

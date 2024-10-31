@@ -26,34 +26,35 @@
         <!-- Error Message Area -->
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-                <div class="mt-4">
-                    <p class="text-red-500">@errorMessage</p>
-                </div>
+                    <div class="mt-4">
+                        <p class="text-red-500">@errorMessage</p>
+                    </div>
         }
 
         @if (songs != null && songs.Any())
         {
             foreach (var song in songs)
             {
-                        <div class="flex items-center">
-                            <InputCheckbox @bind-Value="song.IsSelected" />
-                            <span class="text-gray-400 ml-2">@song.Title by @song.Artist</span>
-                        </div>
+                                <div class="flex items-center">
+                                    <InputCheckbox @bind-Value="song.IsSelected" />
+                                    <span class="text-gray-400 ml-2">@song.Title by @song.Artist</span>
+                                </div>
             }
         }
         else
         {
-                <p class="text-gray-400">No songs available to select.</p>
+                    <p class="text-gray-400">No songs available to select.</p>
         }
 
+        <!-- Create Playlist Button-->
         <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded mt-4">Create Playlist</button>
     </EditForm>
 
     @if (!string.IsNullOrEmpty(successMessage))
     {
-            <div class="mt-4">
-                <p class="text-green-500">@successMessage</p>
-            </div>
+                <div class="mt-4">
+                    <p class="text-green-500">@successMessage</p>
+                </div>
     }
 
     <ul class="space-y-4 mt-6">
@@ -61,21 +62,30 @@
         {
             foreach (var playlist in playlists)
             {
-                        <li class="flex items-center justify-between bg-gray-800 p-4 rounded">
-                            <div>
-                                <h3 class="text-lg text-white">@playlist.Name</h3>
-                                <p class="text-gray-400">@playlist.Description</p>
-                            </div>
-                            <div>
-                                <button @onclick="() => EditPlaylist(playlist)" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
-                                <button @onclick="() => DeletePlaylist(playlist.Id)" class="bg-red-600 text-white px-2 py-1 rounded ml-2">Delete</button>
-                            </div>
-                        </li>
+                                <li class="flex items-center justify-between bg-gray-800 p-4 rounded">
+                                    <div>
+                                        <h3 class="text-lg text-white">@playlist.Name</h3>
+                                        <p class="text-gray-400">@playlist.Description</p>
+                                                 <!-- Display songs in the playlist -->
+                            <ul>
+                            @foreach (var song in playlist.Songs)
+                            {
+                                            <li>
+                                                <strong>@song.Title</strong> by @song.Artist
+                                            </li>
+                            }
+                            </ul>
+                                    </div>
+                                    <div>
+                                        <button @onclick="() => EditPlaylist(playlist)" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+                                        <button @onclick="() => DeletePlaylist(playlist.Id)" class="bg-red-600 text-white px-2 py-1 rounded ml-2">Delete</button>
+                                    </div>
+                                </li>
             }
         }
         else
         {
-                <p class="text-gray-400">No playlists found.</p>
+                    <p class="text-gray-400">No playlists found.</p>
         }
     </ul>
 </div>
@@ -84,6 +94,7 @@
     private List<Playlist> playlists = new List<Playlist>();
     private List<Song> songs = new List<Song>();
     private Playlist newPlaylist = new Playlist();
+    private Playlist? editingPlaylist = null;
     private string errorMessage;
     private string successMessage;
 
@@ -163,47 +174,58 @@
 
         foreach (var song in selectedSongs)
         {
-             Console.WriteLine($"Song: ID: {song.Id}, Title: {song.Title}, IsSelected: {song.IsSelected}");
+            Console.WriteLine($"Song: ID: {song.Id}, Title: {song.Title}, IsSelected: {song.IsSelected}");
         }
-        
 
-    // Create the playlist object with selected songs
-     var playlistDto = new PlaylistDTO
-    {
-        Name = newPlaylist.Name,
-        Description = newPlaylist.Description,
-        SongIds = selectedSongs.Select(s => s.Id).ToList()
-    };
 
-    // var playlistToCreate = new Playlist
-    // {
-    //     Name = newPlaylist.Name,
-    //     Description = newPlaylist.Description,
-    //     Songs = selectedSongs
-    // };
+        // Create the playlist object with selected songs
+        var playlistDto = new PlaylistDTO
+            {
+                Id = editingPlaylist?.Id ?? Guid.NewGuid(),
+                Name = newPlaylist.Name,
+                Description = newPlaylist.Description,
+                SongIds = selectedSongs.Select(s => s.Id).ToList()
+            };
 
-    try
-    {
-        var response = await Http.PostAsJsonAsync("api/playlists", playlistDto);
-        if (!response.IsSuccessStatusCode)
+        // var playlistToCreate = new Playlist
+        // {
+        //     Name = newPlaylist.Name,
+        //     Description = newPlaylist.Description,
+        //     Songs = selectedSongs
+        // };
+
+        try
         {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error response: {responseContent}"); // Log the error response
-            errorMessage = $"Failed to create playlist. Server responded: {responseContent}";
-            return; // Exit if the request failed
-        }
+            HttpResponseMessage response;
+            if (editingPlaylist != null)
+            {
+                // Editing existing playlist
+                response = await Http.PutAsJsonAsync($"api/playlists/{playlistDto.Id}", playlistDto);
+                editingPlaylist = null; // Clear editing state
+            }
+            else
+            {
+                // Creating new playlist
+                response = await Http.PostAsJsonAsync("api/playlists", playlistDto);
+            }
 
-        // Reset form and update UI on successful playlist creation
-        newPlaylist = new Playlist(); // Reset form
-        songs.ForEach(s => s.IsSelected = false); // Clear song selection
-        await LoadPlaylists(); // Reload playlists
-        successMessage = "Playlist created successfully!";
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = $"Failed to create playlist.";
+                return;
+            }
+
+            // Reset form and update UI on successful playlist creation
+            newPlaylist = new Playlist(); // Reset form
+            songs.ForEach(s => s.IsSelected = false); // Clear song selection
+            await LoadPlaylists(); // Reload playlists
+            successMessage = "Playlist created successfully!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the playlist: {ex.Message}";
+        }
     }
-    catch (Exception ex)
-    {
-        errorMessage = $"An error occurred while creating the playlist: {ex.Message}";
-    }
-}
 
     private async Task DeletePlaylist(Guid playlistId)
     {
@@ -216,6 +238,15 @@
 
     private void EditPlaylist(Playlist playlist)
     {
-        Console.WriteLine($"Edit playlist: {playlist.Name}");
+        // Set newPlaylist to existing playlist data for editing
+        editingPlaylist = playlist;
+        newPlaylist = new Playlist { Id = playlist.Id, Name = playlist.Name, Description = playlist.Description };
+
+        // Set song selection states
+        foreach (var song in songs)
+        {
+            song.IsSelected = playlist.Songs.Any(s => s.Id == song.Id);
+        }
     }
+}
 }
