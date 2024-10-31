@@ -136,6 +136,16 @@ namespace music_manager_starter.Server.Controllers
                 return BadRequest("Playlist ID mismatch.");
             }
 
+            // Fetch the existing playlist
+            var existingPlaylist = await _context.Playlists
+                .Include(p => p.Songs)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (existingPlaylist == null)
+            {
+                return NotFound();
+            }
+
             // Fetch existing songs from the database
             var existingSongs = await _context.Songs
                 .Where(song => updatedPlaylistDto.SongIds.Contains(song.Id))
@@ -147,16 +157,10 @@ namespace music_manager_starter.Server.Controllers
                 return BadRequest("One or more songs do not exist in the library.");
             }
 
-            // Update the playlist
-            var updatedPlaylist = new Playlist
-            {
-                Id = updatedPlaylistDto.Id,
-                Name = updatedPlaylistDto.Name,
-                Description = updatedPlaylistDto.Description,
-                Songs = existingSongs // Associate existing songs with the updated playlist
-            };
-
-            _context.Entry(updatedPlaylist).State = EntityState.Modified;
+            // Update properties of the existing playlist
+            existingPlaylist.Name = updatedPlaylistDto.Name;
+            existingPlaylist.Description = updatedPlaylistDto.Description;
+            existingPlaylist.Songs = existingSongs; // Associate existing songs with the updated playlist
 
             try
             {

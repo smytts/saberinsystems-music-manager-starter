@@ -199,6 +199,7 @@
             HttpResponseMessage response;
             if (editingPlaylist != null)
             {
+                Console.WriteLine($"Editing Playlist ID: {playlistDto.Id}");
                 // Editing existing playlist
                 response = await Http.PutAsJsonAsync($"api/playlists/{playlistDto.Id}", playlistDto);
                 editingPlaylist = null; // Clear editing state
