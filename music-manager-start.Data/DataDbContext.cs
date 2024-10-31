@@ -33,7 +33,7 @@ namespace music_manager_starter.Data
             modelBuilder.Entity<Playlist>()
                 .HasMany(p => p.Songs)
                 .WithMany(s => s.Playlists)
-                .UsingEntity(j => j.ToTable("PlaylistSongs"));
+                .UsingEntity(j => j.ToTable("PlaylistSongs")); // join table
         }
 
     }

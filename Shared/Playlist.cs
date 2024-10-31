@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using music_manager_starter.Shared;
 
-namespace music_manager_start.Data.Models
+namespace music_manager_starter.Shared
 {
     public class Playlist
     {
