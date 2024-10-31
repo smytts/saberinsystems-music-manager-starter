@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using music_manager_start.Data.Models;
 using music_manager_starter.Data;
 using music_manager_starter.Data.Models;
 using System;
@@ -11,11 +10,11 @@ namespace music_manager_starter.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlaylistController : ControllerBase
+    public class PlaylistsController : ControllerBase
     {
         private readonly DataDbContext _context;
 
-        public PlaylistController(DataDbContext context)
+        public PlaylistsController(DataDbContext context)
         {
             _context = context;
         }
@@ -51,6 +50,16 @@ namespace music_manager_starter.Server.Controllers
             if (playlist == null)
             {
                 return BadRequest("Playlist cannot be null.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (playlist.Songs == null || !playlist.Songs.Any())
+            {
+                return BadRequest("At least one song must be included in the playlist.");
             }
 
             _context.Playlists.Add(playlist);

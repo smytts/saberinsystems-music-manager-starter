@@ -1,0 +1,173 @@
+﻿@page "/Playlists"
+@inject HttpClient Http
+@using music_manager_starter.Shared
+
+<div class="p-6">
+    <h2 class="text-xl font-semibold text-white">Playlists</h2>
+
+    <h3 class="text-lg font-semibold text-white mt-6">Create New Playlist</h3>
+    <EditForm Model="newPlaylist" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Playlist Name</label>
+            <InputText @bind-Value="newPlaylist.Name" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-200">Description</label>
+            <InputText @bind-Value="newPlaylist.Description" class="mt-1 block w-full p-2 border rounded" />
+        </div>
+
+        <h4 class="text-gray-200">Select Songs</h4>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+                <p class="mt-4 text-red-500">@errorMessage</p>
+        }
+        else if (songs != null && songs.Any())
+        {
+            foreach (var song in songs)
+            {
+                        <div class="flex items-center">
+                            <InputCheckbox @bind-Value="song.IsSelected" />
+                            <span class="text-gray-400 ml-2">@song.Title by @song.Artist</span>
+                        </div>
+            }
+        }
+        else
+        {
+                <p class="text-gray-400">No songs available to select.</p>
+        }
+
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded mt-4">Create Playlist</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+            <p class="mt-4 text-green-500">@successMessage</p>
+    }
+
+    <ul class="space-y-4 mt-6">
+        @if (playlists != null && playlists.Any())
+        {
+            foreach (var playlist in playlists)
+            {
+                        <li class="flex items-center justify-between bg-gray-800 p-4 rounded">
+                            <div>
+                                <h3 class="text-lg text-white">@playlist.Name</h3>
+                                <p class="text-gray-400">@playlist.Description</p>
+                            </div>
+                            <div>
+                                <button @onclick="() => EditPlaylist(playlist)" class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+                                <button @onclick="() => DeletePlaylist(playlist.Id)" class="bg-red-600 text-white px-2 py-1 rounded ml-2">Delete</button>
+                            </div>
+                        </li>
+            }
+        }
+        else
+        {
+                <p class="text-gray-400">No playlists found.</p>
+        }
+    </ul>
+</div>
+
+
+@code {
+    private List<Playlist> playlists = new List<Playlist>();
+    private List<Song> songs = new List<Song>();
+    private Playlist newPlaylist = new Playlist();
+    private string errorMessage;
+    private string successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSongs();
+        await LoadPlaylists();
+    }
+
+    private async Task LoadPlaylists()
+    {
+        var response = await Http.GetAsync("api/playlists");
+        if (response.IsSuccessStatusCode)
+        {
+            playlists = await response.Content.ReadFromJsonAsync<List<Playlist>>() ?? new List<Playlist>();
+        }
+    }
+
+    private async Task LoadSongs()
+    {
+         errorMessage = null; // Clear previous error messages
+
+        try
+        {
+            songs = await Http.GetFromJsonAsync<List<Song>>("api/songs") ?? new List<Song>();
+
+             Console.WriteLine($"Loaded songs: {songs.Count}");
+
+            if (!songs.Any())
+            {
+                errorMessage = "No songs available."; 
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while loading songs: {ex.Message}";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (songs == null || !songs.Any())
+        {
+            errorMessage = "No songs available to create a playlist.";
+            return;
+        }
+
+        // Create a new playlist with selected songs
+        var selectedSongs = songs.Where(s => s.IsSelected).ToList();
+
+        if (string.IsNullOrEmpty(newPlaylist.Name) || string.IsNullOrEmpty(newPlaylist.Description) || !selectedSongs.Any())
+        {
+            errorMessage = "Please provide a playlist name, description, and select at least one song.";
+            return;
+        }
+
+        var playlistToCreate = new Playlist
+            {
+                Name = newPlaylist.Name,
+                Description = newPlaylist.Description,
+                Songs = selectedSongs // Add selected songs directly here
+            };
+
+        var response = await Http.PostAsJsonAsync("api/playlists", playlistToCreate);
+        if (response.IsSuccessStatusCode)
+        {
+            newPlaylist = new Playlist(); // Reset form
+            await LoadPlaylists(); // Reload playlists
+            await LoadSongs(); // Reload songs
+            successMessage = "Playlist created successfully!";
+            errorMessage = null; // Clear error message
+        }
+        else
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            errorMessage = $"Failed to create playlist. Server responded: {responseContent}";
+            successMessage = null; // Clear success message
+        }
+    }
+
+    private async Task DeletePlaylist(Guid playlistId)
+    {
+        var response = await Http.DeleteAsync($"api/playlists/{playlistId}");
+        if (response.IsSuccessStatusCode)
+        {
+            playlists = playlists.Where(p => p.Id != playlistId).ToList();
+        }
+    }
+
+    private void EditPlaylist(Playlist playlist)
+    {
+        Console.WriteLine($"Edit playlist: {playlist.Name}");
+    }
+}

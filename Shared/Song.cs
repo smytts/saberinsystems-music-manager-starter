@@ -1,5 +1,4 @@
-﻿using music_manager_start.Data.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,5 +15,6 @@ namespace music_manager_starter.Shared
         public string Album { get; set; }
         public string Genre { get; set; }
         public List<Playlist> Playlists { get; set; } = new List<Playlist>(); // For many-to-many relationship with Playlist
+        public bool IsSelected { get; set; }
     }
 }
