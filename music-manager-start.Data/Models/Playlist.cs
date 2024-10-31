@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using music_manager_starter.Data.Models;
+using System.Text.Json.Serialization;
 
 namespace music_manager_starter.Data.Models
 {
@@ -13,6 +14,7 @@ namespace music_manager_starter.Data.Models
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        [JsonIgnore]
         public List<Song> Songs { get; set; } = new List<Song>(); // initialized to avoid null reference issues
     }
 }

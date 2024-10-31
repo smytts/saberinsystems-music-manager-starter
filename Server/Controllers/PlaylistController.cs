@@ -62,11 +62,26 @@ namespace music_manager_starter.Server.Controllers
                 return BadRequest("At least one song must be included in the playlist.");
             }
 
+            // Fetch existing songs from the database
+            var existingSongs = await _context.Songs
+                .Where(song => playlist.Songs.Select(s => s.Id).Contains(song.Id))
+                .ToListAsync();
+
+            // Check if all songs exist
+            if (existingSongs.Count != playlist.Songs.Count)
+            {
+                return BadRequest("One or more songs do not exist in the library.");
+            }
+
+            // Associate existing songs with the new playlist
+            playlist.Songs = existingSongs;
+
             _context.Playlists.Add(playlist);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
         }
+
 
         // Update an exisiting playlist
         [HttpPut("{id}")]
