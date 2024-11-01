@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using music_manager_starter.Shared
 
+
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
@@ -70,7 +71,7 @@
     <input type="text" 
        @bind="searchQuery" 
        @onkeydown="HandleKeyDown" 
-       placeholder="Search by title, artist, or album" 
+       placeholder="Search..." 
        class="mb-4 p-2 border border-gray-300 rounded" />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

@@ -64,8 +64,10 @@ namespace music_manager_starter.Server.Controllers
                 return await GetSongs(); // Return all songs if no query is provided
             }
 
+            var lowerCaseQuery = query.ToLower();
+
             var results = await _context.Songs
-                .Where(s => s.Title.Contains(query) || s.Artist.Contains(query) || s.Album.Contains(query))
+                .Where(s => s.Title.ToLower().Contains(lowerCaseQuery) || s.Artist.ToLower().Contains(lowerCaseQuery) || s.Album.Contains(lowerCaseQuery))
                 .ToListAsync();
 
             return Ok(results);
