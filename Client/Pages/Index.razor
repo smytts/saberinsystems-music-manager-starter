@@ -1,5 +1,8 @@
 ﻿@page "/"
 @using music_manager_starter.Shared
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Components.Forms
+
 
 
 @inject HttpClient Http
@@ -10,6 +13,8 @@
     private List<Song> filteredSongs;
     private string searchQuery;
     private string message;
+    private Guid? selectedSongId; // for uploading album art
+   // private IBrowserFile albumArtFile;
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,7 +46,7 @@
         }
     }
 
-     private void HandleKeyDown(KeyboardEventArgs e)
+    private void HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
@@ -62,7 +67,61 @@
             filteredSongs = songs;
         }
     }
+
+//      private async Task OnFileChange(InputFileChangeEventArgs e)
+//      {
+//      if (selectedSongId.HasValue)
+//     {
+//         await OnFileSelected(e, selectedSongId.Value); Call your existing method with the selected song ID
+//     }
+//     else
+//     {
+//         message = "Please select a song first.";
+//     }
+//      }
+
+//     private async Task OnFileSelected(InputFileChangeEventArgs e, Guid songId)
+//     {
+//         var files = e.GetMultipleFiles();
+
+//         if (files.Count > 0)
+//         {
+//             selectedSongId = songId;
+//             albumArtFile = files[0]; Get the first file
+//         }
+//     }
+
+//   private async Task UploadAlbumArt()
+//     {
+//         if (albumArtFile != null && selectedSongId.HasValue)
+//         {
+//             var content = new MultipartFormDataContent();
+            
+//             var fileContent = new StreamContent(albumArtFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024)); Limit to 2 MB
+
+//             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(albumArtFile.ContentType);
+//             content.Add(fileContent, "file", albumArtFile.Name);
+
+//             var response = await Http.PostAsync($"api/songs/uploadAlbumArt/{selectedSongId.Value}", content);
+
+//             if (response.IsSuccessStatusCode)
+//             {
+//                 var albumArtUrl = await response.Content.ReadAsStringAsync();
+//                 message = "Album art uploaded successfully!";
+//                 albumArtFile = null;
+//                 await LoadSongs(); Refresh song list
+//                 StateHasChanged();
+//             }
+//             else
+//             {
+//                 var errorMessage = await response.Content.ReadAsStringAsync();
+//                 message = $"Error uploading album art: {errorMessage}. Please try again.";
+//             }
+//         }
+//     }
+
 }
+
 
 <div class="p-0 min-h-screen bg-pattern flex flex-col items-center justify-center">
     <h2 class="text-3xl font-bold text-white mb-8 text-center">Song Library</h2>
@@ -79,7 +138,7 @@
         {
             @foreach (var song in filteredSongs)
             {
-                        <div class="glass p-6 border border-gray-300 rounded-lg text-white transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer">
+                        <div @onclick="() => selectedSongId = song.Id" class="glass p-6 border border-gray-300 rounded-lg text-white transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer">
                             <h3 class="text-xl font-semibold mb-2">@song.Title</h3>
                             <p class="text-md">Artist: <span class="font-light">@song.Artist</span></p>
                             <p class="text-md">Album: <span class="font-light">@song.Album</span></p>
