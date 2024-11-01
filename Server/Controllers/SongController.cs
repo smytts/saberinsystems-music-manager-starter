@@ -55,5 +55,21 @@ namespace music_manager_starter.Server.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<Song>>> SearchSongs(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return await GetSongs(); // Return all songs if no query is provided
+            }
+
+            var results = await _context.Songs
+                .Where(s => s.Title.Contains(query) || s.Artist.Contains(query) || s.Album.Contains(query))
+                .ToListAsync();
+
+            return Ok(results);
+        }
+
     }
 }
